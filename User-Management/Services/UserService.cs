@@ -1,6 +1,6 @@
 using User_Management.Exceptions;
 
-namespace User_Management
+namespace User_Management.Services
 {
     public interface IUserService
     {

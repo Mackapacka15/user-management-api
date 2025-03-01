@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using User_Management.Exceptions;
+using User_Management.Services;
 
 namespace User_Management.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class UserController(IUserService userService) : ControllerBase
     {
         private readonly IUserService _userService = userService;
