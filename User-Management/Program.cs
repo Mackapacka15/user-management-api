@@ -15,27 +15,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.Use(
-    async (context, next) =>
-    {
-        try
-        {
-            Console.WriteLine($"Request: {context.Request.Method} {context.Request.Path}");
-            await next.Invoke();
-        }
-        catch (NotFoundException e)
-        {
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync(e.Message);
-        }
-        catch (Exception e)
-        {
-            context.Response.StatusCode = 500;
-            await context.Response.WriteAsync(e.Message);
-        }
-    }
-);
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
