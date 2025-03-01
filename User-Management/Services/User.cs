@@ -1,4 +1,4 @@
-namespace User_Management
+namespace UserManagement
 {
     public class User
     {

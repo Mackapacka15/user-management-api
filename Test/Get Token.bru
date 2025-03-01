@@ -1,0 +1,17 @@
+meta {
+  name: Get Token
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://127.0.0.1:5017/api/auth/token
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "masterKey": "YourStrongMasterPassword"
+  }
+}

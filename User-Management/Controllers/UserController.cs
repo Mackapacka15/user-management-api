@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using User_Management.Exceptions;
-using User_Management.Services;
+using UserManagement.Exceptions;
+using UserManagement.Services;
 
-namespace User_Management.Controllers
+namespace UserManagement.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("[controller]")]
-    [Authorize]
     public class UserController(IUserService userService) : ControllerBase
     {
         private readonly IUserService _userService = userService;
@@ -21,19 +21,8 @@ namespace User_Management.Controllers
         [HttpGet("{name}", Name = "GetUser")]
         public ActionResult<User> GetUser(string name)
         {
-            try
-            {
-                User user = _userService.GetUser(name);
-                return Ok(user);
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (Exception e)
-            {
-                return StatusCode(500, e.Message);
-            }
+            User user = _userService.GetUser(name);
+            return Ok(user);
         }
 
         [HttpPost(Name = "CreateUser")]

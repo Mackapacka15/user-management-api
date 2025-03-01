@@ -1,7 +1,7 @@
-namespace User_Management.Controllers;
+namespace UserManagement.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using User_Management.Services;
+using UserManagement.Services;
 
 [Route("api/auth")]
 [ApiController]
@@ -20,7 +20,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         }
 
         var token = _authService.GenerateToken();
-        return Ok(new { token });
+        return Ok(token);
     }
 }
 

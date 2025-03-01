@@ -1,10 +1,16 @@
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.IdentityModel.Tokens;
-using User_Management.Services;
+using Microsoft.OpenApi.Models;
+using UserManagement.Authentication;
+using UserManagement.Services;
+using UserManagement.SetupOptions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddRouting(o => o.LowercaseUrls = true);
+
+builder.Services.AddAuthentication().AddJwtBearer();
+builder
+    .Services.AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
 
 // Add services to the container.
 
@@ -15,34 +21,76 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var config = builder.Configuration;
-var secret = config["Jwt:Secret"];
-if (string.IsNullOrWhiteSpace(secret))
+builder.Services.AddSwaggerGen(c =>
 {
-    throw new ArgumentException("JWT secret key is missing!");
-}
-var secretKey = Encoding.UTF8.GetBytes(secret);
-
-builder
-    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
+    c.SwaggerDoc("v1", new() { Title = "UserManagement", Version = "v1" });
+    c.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = config["Jwt:Issuer"],
-            ValidAudience = config["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(secretKey),
-        };
-    });
+            In = ParameterLocation.Header,
+            Description = "Please enter a valid JWT token",
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            BearerFormat = "JWT",
+            Scheme = "Bearer",
+        }
+    );
+    c.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer",
+                    },
+                },
+                new string[] { }
+            },
+        }
+    );
+});
 
-builder.Services.AddAuthorization();
 var app = builder.Build();
+app.Use(
+    async (context, next) =>
+    {
+        var authHeader = context.Request.Headers.Authorization;
+        Console.WriteLine($"Authorization header: {authHeader}");
+        await next();
+    }
+);
+app.Use(
+    async (context, next) =>
+    {
+        try
+        {
+            await next();
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An error occurred.");
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "text/plain";
+            await context.Response.WriteAsync("An error occurred.");
+        }
+    }
+);
+
+app.Use(
+    async (context, next) =>
+    {
+        var path = context.Request.Path;
+        var method = context.Request.Method;
+        Console.WriteLine($"Request: {method}: {path}");
+        await next();
+        var statusCode = context.Response.StatusCode;
+        Console.WriteLine($"Response: {statusCode}");
+    }
+);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -53,7 +101,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

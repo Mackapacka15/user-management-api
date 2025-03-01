@@ -1,4 +1,4 @@
-namespace User_Management.Exceptions
+namespace UserManagement.Exceptions
 {
     using System;
 
