@@ -21,8 +21,18 @@ namespace UserManagement.Controllers
         [HttpGet("{name}", Name = "GetUser")]
         public ActionResult<User> GetUser(string name)
         {
-            User user = _userService.GetUser(name);
-            return Ok(user);
+            try
+            {
+                return Ok(_userService.GetUser(name));
+            }
+            catch (NotFoundException e)
+            {
+                return NotFound(e.Message);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, e.Message);
+            }
         }
 
         [HttpPost(Name = "CreateUser")]

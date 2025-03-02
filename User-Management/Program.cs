@@ -1,5 +1,8 @@
+using System.Net;
+using System.Text.Json;
 using Microsoft.OpenApi.Models;
 using UserManagement.Authentication;
+using UserManagement.Exceptions;
 using UserManagement.Services;
 using UserManagement.SetupOptions;
 
@@ -55,30 +58,24 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
-app.Use(
-    async (context, next) =>
-    {
-        var authHeader = context.Request.Headers.Authorization;
-        Console.WriteLine($"Authorization header: {authHeader}");
-        await next();
-    }
-);
-app.Use(
-    async (context, next) =>
-    {
-        try
-        {
-            await next();
-        }
-        catch (Exception)
-        {
-            Console.WriteLine("An error occurred.");
-            context.Response.StatusCode = 500;
-            context.Response.ContentType = "text/plain";
-            await context.Response.WriteAsync("An error occurred.");
-        }
-    }
-);
+app.UseMiddleware<ExceptionHandler>();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.UseExceptionHandler("/error-local-development");
+}
+else
+{
+    app.UseExceptionHandler("/error");
+}
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Use(
     async (context, next) =>
@@ -91,19 +88,6 @@ app.Use(
         Console.WriteLine($"Response: {statusCode}");
     }
 );
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
